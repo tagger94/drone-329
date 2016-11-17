@@ -7,13 +7,9 @@
 </head>
 
 <body>
-    <h1>Spoof Consumer</h1>
     <div>
-        <input type="submit" value="Connect" onClick="get_pData()">
     </div><br>
-    <hr id="lbreak" size="30" color="#0099ff"> currently following...
-    <h2 id='roomid'>Patients: </h2>
-    <div style='width=100%' id="patientDash">
+    <div style='width=100%' id="WorkerDash">
 
 
     </div>
@@ -23,22 +19,22 @@
     <script>
         //var socket = io();
         //var roomAlex = io('/alex');
-        var room = io('/consumer');
-        setupRoom();
+        var connection = io('/worker');
+        setupConnection();
 
         function setupRoom() {
-            room.on('connect', function(msg) {
-                console.log("Connected room to server");
+            connection.on('connect', function(msg) {
+                console.log("Connected to server");
             });
 
-            room.on('disconnect', function(msg) {
+            connection.on('disconnect', function(msg) {
                 console.log("disconnect from server");
             });
 
 
             //Setup Alert message
-            room.on('update', recieveUpdate);
-            room.on('patient data', recievePatientData);
+            connection.on('pass work', recieveWork);
+            connection.on('patient data', recievePatientData);
         }
 
         function get_pData() {
@@ -59,8 +55,8 @@
             room.emit("subscribe to patient", pid);
         }
 
-        function recieveUpdate(message) {
-            console.log('Update Recived for ' + message.pid);
+        function recieveUpdate(work) {
+            console.log("Work Recived");
             var s = "Heart Rate : " + message.update;
             $('#patientHeartRate' + message.pid).text(s);
         }
