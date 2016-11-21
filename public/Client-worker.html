@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Web Worker</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+
+<body>
+    <div>
+    </div><br>
+    <div style='width=100%' id="WorkerDash">
+
+
+    </div>
+
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        //var socket = io();
+        //var roomAlex = io('/alex');
+        var connection = io('/worker');
+        setupConnection();
+
+        function setupRoom() {
+            connection.on('connect', function(msg) {
+                console.log("Connected to server");
+            });
+
+            connection.on('disconnect', function(msg) {
+                console.log("disconnect from server");
+            });
+
+
+            //Setup Alert message
+            connection.on('pass work', recieveWork);
+            connection.on('patient data', recievePatientData);
+        }
+
+        function get_pData() {
+            var pid = document.getElementById("pid").value;
+            $("#pid").val("");
+            if (!pid || (isNaN(pid))) {
+                console.log("Not a patient id");
+                return;
+            }
+            requestPatientData(pid);
+
+        }
+
+        function requestPatientData(pid) {
+            //$('#patientStatus').text("Status: ")
+            console.log("requesting data");
+            //TODO --> remove spoof
+            room.emit("subscribe to patient", pid);
+        }
+
+        function recieveUpdate(work) {
+            console.log("Work Recived");
+            var s = "Heart Rate : " + message.update;
+            $('#patientHeartRate' + message.pid).text(s);
+        }
+
+    </script>
+</body>
+
+</html>
