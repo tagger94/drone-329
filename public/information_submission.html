@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Information Submission</title>
+</head>
+<body>
+
+<style>
+    button
+    {
+        color: white;
+        width: 75px;
+        background: steelblue;
+    }
+    
+</style>
+
+<h1>Drone Stats</h1>
+<table>
+    <tr>
+        <th>Max Weight:</th>
+        <th><input type="text" name="maxweight"></th>
+    </tr>
+    <tr>
+        <th>Max Distance:</th>
+        <th><input type="text" name="maxdistance"></th>
+    </tr>
+    <tr>
+        <th>Drone Count:</th>
+        <th><input type="text" name="dronecount"></th>
+    </tr>
+
+
+</table>
+
+    <h1>Package Info</h1>
+<table>
+    <tr>
+        <th>Height:</th>
+        <th><input type="text" name="height"></th>
+    </tr>
+    <tr>
+        <th>Width:</th>
+        <th><input type="text" name="width"></th>
+    </tr>
+    <tr>
+        <th>Length:</th>
+        <th><input type="text" name="length"></th>
+    </tr>
+    <tr>
+        <th>Weight:</th>
+        <th><input type="text" name="weight"></th>
+    </tr>
+    <tr align="left">
+        <th></th>
+        <th><button>Submit</button></th>
+    </tr>
+
+</table>
+
+
+
+<h3>- OR - </h3>
+
+<form>
+    <input type="file" name="file" accept=".json">
+    <button>Submit</button>
+</form>
+
+</body>
+</html>
