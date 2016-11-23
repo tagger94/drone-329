@@ -8,7 +8,7 @@
     button
     {
         color: white;
-        width: 75px;
+        width: 85px;
         background: steelblue;
     }
 </style>
@@ -17,7 +17,7 @@
 <h1>Drone Stats</h1>
 <table>
     <tr>
-        <th align="left">Max Weight:</th>
+        <th align="left" width="100">Max Weight:</th>
         <th><input type="text" name="max_weight" title="max_weight"></th>
     </tr>
     <tr>
@@ -33,7 +33,7 @@
     <h1>Package Info</h1>
 <table>
     <tr>
-        <th align="left">Height:</th>
+        <th align="left" width="100">Height:</th>
         <th><input type="text" name="height" title="height"></th>
     </tr>
     <tr>
@@ -50,6 +50,10 @@
     </tr>
     <tr align="left">
         <th></th>
+        <th><button>Add Package</button></th>
+    </tr>
+    <tr align="left">
+        <th></th>
         <th><button>Submit</button></th>
     </tr>
 </table>
@@ -62,4 +66,28 @@
 </form>
 
 </body>
+<script>
+    var packages = [];
+
+    function createOrder()
+    {
+        var maxWeight = document.getElementsByName("max_weight");
+        var maxDistance = document.getElementsByName("max_distance");
+        var droneCount = document.getElementsByName("drone_count");
+
+        //send three variables to some function + packages array.
+    }
+
+    function addPackage()
+    {
+        var packageInfo = {
+            weight : document.getElementsByName("weight"),
+            height : document.getElementsByName("height"),
+            width : document.getElementsByName("width"),
+            length: document.getElementsByName("length")
+        };
+
+        packages.add(packageInfo);
+    }
+</script>
 </html>
