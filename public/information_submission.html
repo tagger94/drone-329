@@ -81,7 +81,7 @@
     function addPackage()
     {
 
-        var packageInfo = new Object();
+        var packageInfo = {};
 
         packageInfo.weight = document.getElementById("weight").value;
         packageInfo.height = document.getElementById("height").value;
@@ -98,6 +98,7 @@
             document.getElementById("length").value = "";
 
         }
+
         else
         {
             alert("Null value in object");
