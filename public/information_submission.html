@@ -34,23 +34,23 @@
 <table>
     <tr>
         <th align="left" width="100">Height:</th>
-        <th><input type="text" name="height" title="height"></th>
+        <th><input type="text" name="height" title="height" id="height"></th>
     </tr>
     <tr>
         <th align="left">Width:</th>
-        <th><input type="text" name="width" title="width"></th>
+        <th><input type="text" name="width" title="width" id="width"></th>
     </tr>
     <tr>
         <th align="left">Length:</th>
-        <th><input type="text" name="length" title="length"></th>
+        <th><input type="text" name="length" title="length" id="length"></th>
     </tr>
     <tr>
         <th align="left">Weight:</th>
-        <th><input type="text" name="weight" title="weight"></th>
+        <th><input type="text" name="weight" title="weight" id="weight"></th>
     </tr>
     <tr align="left">
         <th></th>
-        <th><button>Add Package</button></th>
+        <th><button onclick="addPackage()">Add Package</button></th>
     </tr>
     <tr align="left">
         <th></th>
@@ -80,14 +80,28 @@
 
     function addPackage()
     {
-        var packageInfo = {
-            weight : document.getElementsByName("weight"),
-            height : document.getElementsByName("height"),
-            width : document.getElementsByName("width"),
-            length: document.getElementsByName("length")
-        };
 
-        packages.add(packageInfo);
+        var packageInfo = new Object();
+
+        packageInfo.weight = document.getElementById("weight").value;
+        packageInfo.height = document.getElementById("height").value;
+        packageInfo.width = document.getElementById("width").value;
+        packageInfo.length = document.getElementById("length").value;
+
+
+        if(!(packageInfo.width === "" || packageInfo.height === "" || packageInfo.length === "" || packageInfo.weight === ""))
+        {
+            packages.push(packageInfo);
+            document.getElementById("weight").value = "";
+            document.getElementById("height").value = "";
+            document.getElementById("width").value = "";
+            document.getElementById("length").value = "";
+
+        }
+        else
+        {
+            alert("Null value in object");
+        }
     }
 </script>
 </html>
