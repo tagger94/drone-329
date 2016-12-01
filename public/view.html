@@ -2,7 +2,29 @@
 
 <head>
     <meta charset="utf-8">
-    <title>View Patient Data</title>
+    <title>Genetic Delivery</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <style>
+        body {
+            background: lightblue;
+        }
+        
+        hr {
+            display: block;
+            height: 1px;
+            border: 0;
+            border-top: 1px solid #ccc;
+            margin: 1em 0;
+            padding: 0;
+        }
+        
+        #header {
+            background: steelblue;
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
 </head>
 
 <body>
@@ -10,24 +32,36 @@
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 
-    <h1 align="center">View Patient Data</h1>
-    <hr>
+    <div id="header" width="100%">
+        <h1 align="center">Genetic Delivery</h1>
+        <hr>
+        <span width="33%">
+            <input id="editConfig" type="button" value="Edit Configuration">&nbsp&nbsp
+        </span>
+        <span width="33%">
+            <input id="loadCoords" type="button" value="Load New Coordinates">&nbsp&nbsp
+        </span>
+        <span width="33%">
+            <input id="runAlgo" type="button" value="Find Path">
+        </span>
+        <br><br>
+    </div>
 
-    <input id="editConfig" type="button" value="Edit Configuration">&nbsp&nbsp
-    <input id="loadCoords" type="button" value="Load New Coordinates">&nbsp&nbsp
-    <input id="runAlgo" type="button" value="Find Path">
-
+    <div id="svgCanvasView">
+    </div>
+    </header>
     <script type="text/javascript">
-        var socket = io('/client');
-        socket.on('connect', function() {
-            //socket.emit('request xy coords', "");
+        // var socket = io('/client');
+        // socket.on('connect', function() {
+        //socket.emit('request xy coords', "");
 
-            //socket.once('xy coords', init_client_page);
-        })
+        //socket.once('xy coords', init_client_page);
+        // })
 
 
         var x_coords = [];
         var y_coords = [];
+
 
         function init_client_page(xy_coords) {
             document.getElementById("editConfig").onclick = edit_config;
@@ -60,10 +94,30 @@
         }
 
         function init_canvas() {
+            var svgContainer = d3.select("body").append("svg")
+                .attr("width", window.document.width - )
+                .attr("height", 200);
 
         }
 
         function draw_circles() {
+            var circles = svgContainer.selectAll("circle")
+                .data(jsonCircles)
+                .enter()
+                .append("circle");
+            var circleAttributes = circles
+                .attr("cx", function(d) {
+                    return d.x_axis;
+                })
+                .attr("cy", function(d) {
+                    return d.y_axis;
+                })
+                .attr("r", function(d) {
+                    return d.radius;
+                })
+                .style("fill", function(d) {
+                    return d.color;
+                });
 
         }
 
@@ -72,7 +126,7 @@
         }
 
         function edit_config() {
-            window.open("http://www.w3schools.com");
+            window.open("information_submissior.html");
         }
 
         function load_xy_coords() {
