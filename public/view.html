@@ -1,0 +1,88 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>View Patient Data</title>
+</head>
+
+<body>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+
+    <h1 align="center">View Patient Data</h1>
+    <hr>
+
+    <input id="editConfig" type="button" value="Edit Configuration">&nbsp&nbsp
+    <input id="loadCoords" type="button" value="Load New Coordinates">&nbsp&nbsp
+    <input id="runAlgo" type="button" value="Find Path">
+
+    <script type="text/javascript">
+        var socket = io('/client');
+        socket.on('connect', function() {
+            //socket.emit('request xy coords', "");
+
+            //socket.once('xy coords', init_client_page);
+        })
+
+
+        var x_coords = [];
+        var y_coords = [];
+
+        function init_client_page(xy_coords) {
+            document.getElementById("editConfig").onclick = edit_config;
+            document.getElementById("loadCoords").onclick = load_xy_coords;
+            document.getElementById("runAlgo").onclick = start_algo;
+
+            parse_xy_coords(xy_coords);
+
+            init_canvas();
+            draw_circles();
+            draw_paths();
+
+        }
+
+        function parse_xy_coords(xy_coords) {
+            var i;
+            var x_index = 0;
+            var y_index = 0;
+
+            for (i = 0; i < xy_coords.length; i++) {
+                if (xy_coords[i] % 2 == 0) {
+                    x_coords[x_index] = xy_coords[i];
+                    x_index++;
+                }
+                else {
+                    y_coords[y_index] = xy_coords[i];
+                    y_index++;
+                }
+            }
+        }
+
+        function init_canvas() {
+
+        }
+
+        function draw_circles() {
+
+        }
+
+        function draw_paths() {
+
+        }
+
+        function edit_config() {
+            window.open("http://www.w3schools.com");
+        }
+
+        function load_xy_coords() {
+            //from txt or server file system.
+        }
+
+        function start_algo() {
+
+        }
+    </script>
+</body>
+
+</html>
