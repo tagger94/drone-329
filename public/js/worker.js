@@ -1,8 +1,7 @@
 // var connection = io();
 var socket = io('/worker');
-var name;
-var droneStats;
-var packages;
+var config;
+var parcelList;
 setupConnection();
 
 function setupConnection() {
@@ -14,50 +13,66 @@ function setupConnection() {
         console.log("disconnect from server");
     });
 
-    socket.on('server:set:name', function(name) {
-        console.log('client said my name is ' + name);
-        name = name;
+    socket.on('server:pass:details', function(details) {
+        console.log('server sent work details', details);
+        recieveWorkDetail(details);
+
+        socket.emit('worker:ready');
+    });
+
+    //Ready to recieve work
+    socket.on('server:pass:work', function(work) {
+        console.log('server sent work ', work);
+        recieveWork(work);
+
+    });
+
+    socket.on('message', function(msg) {
+        console.log('server sent ', msg);
     })
-
-
-    //Setup Alert message
-    socket.on('server:pass:work', recieveWork);
-    socket.on('server:pass:detail', recieveWorkDetails);
 }
 
 
 function recieveWork(work) {
-    // var packageIndexs = work.packages;
-    var realWork = organizeWork(packages, work);
-    if (packages) {
-        if (isWeightValid(droneStats, realWork.packageIndex, 0)) {
-            var dist = getTotalDistance(realWork.packageIndex, droneStats);
-            if (dist) {
-                
-                returnTotalDist(dist, realWork.id);
-            }
+    //Check if ready
+    if ((parcelList && config) == false) {
+        console.log('--- not ready to work yet, waiting 5 seconds...');
+        setTimeout(function() {
+            console.log('--- trying work again...');
+            recieveWork(work);
+        }, 5000);
+        return;
+    }
+
+    console.log('starting work on ', work.id);
+    //Start Calculations
+    var realWork = organizeWork(parcelList, work);
+
+    if (isWeightValid(config, realWork.packageIndex, 0)) {
+        var dist = getTotalDistance(realWork.packageIndex, config);
+        if (dist) {
+
+            sendResults(dist, realWork.id);
         }
     }
+
     else
-        returnTotalDist(Number.MAX_SAFE_INTEGER, realWork.id);
+        sendResults(Number.MAX_SAFE_INTEGER, realWork.id);
 }
 
-function returnTotalDist(totalDist, id) {
+function sendResults(totalDist, id) {
 
-    console.log(totalDist);
-    var distanceObject = {
+    console.log('finished work on ' + id + ' ',totalDist);
+    var results = {
         distance: totalDist,
         id: id
     }
-    socket.emit('worker:pass:distance', distanceObject);
+    socket.emit('worker:pass:distance', results);
 }
 
-function recieveWorkDetails(details) {
-    // console.log("we have the dirty details");
-    droneStats = details.droneStats;
-    // console.log(details);
-    packages = details.packages;
-
+function recieveWorkDetail(details) {
+    config = details.config;
+    parcelList = details.parcelList;
 }
 
 function getTotalDistance(arr, droneDetails) {
@@ -72,7 +87,7 @@ function getTotalDistance(arr, droneDetails) {
         var p2 = createDistObj(arr[i].x, arr[i].y);
         //checkdist += totalDistance;
         if (i % 3 == 0) {
-           // console.log(totalDistance);
+            // console.log(totalDistance);
             totalDistance += calculation(p1, startP);
             totalDistance += calculation(startP, p2);
             checkdist += totalDistance;
@@ -91,7 +106,7 @@ function getTotalDistance(arr, droneDetails) {
     }
     var lastLocation = createDistObj(arr[i - 2].x, arr[i - 2].y);;
     totalDistance += calculation(lastLocation, startP);
-    if(returnVariable) {
+    if (returnVariable) {
         returnVariable = totalDistance;
     }
     return returnVariable;
@@ -101,10 +116,10 @@ function calculation(p1, p2) {
     return Math.sqrt((Math.pow((p1.x - p2.x), 2)) + (Math.pow((p1.y - p2.y), 2)));
 }
 
-function isWeightValid(droneDetails, array, index) {
+function isWeightValid(dConfig, array, index) {
     var i = index;
     var bucketWeight = 0;
-    var stopIndex = droneDetails.numPackages + i;
+    var stopIndex = dConfig.numPackages + i;
     if (stopIndex > array.length) {
         stopIndex = array.length;
     }
@@ -114,10 +129,10 @@ function isWeightValid(droneDetails, array, index) {
         }
         else return;
     }
-    if (bucketWeight > droneDetails.maxWeight)
+    if (bucketWeight > dConfig.maxWeight)
         return false;
     else if (i < array.length) {
-        return isWeightValid(droneDetails, array, i);
+        return isWeightValid(dConfig, array, i);
     }
     return true;
 }
@@ -130,8 +145,9 @@ function createDistObj(x, y) {
 }
 
 function organizeWork(mainArray, work) {
+    console.log('configuring work for ' + work.id);
     var newArray = [];
-    var workArray = work.packageIndex;
+    var workArray = work.route;
     for (var i = 0; i < workArray.length; i++) {
         newArray[i] = mainArray[workArray[i]];
     }

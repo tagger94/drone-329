@@ -124,12 +124,14 @@ function startGA(workDetail) {
     setup(gaConfig);
 
 }
+var counter = 0;
+var genNumber = 0;
 
-function nextGeneration(pop, n, gaConfig, workDetail) {
+function nextGeneration(pop, gaConfig, workDetail) {
     var newPop = evolvePopulation(pop);
     
     if(n < gaConfig.totalGenerations) {
-        nextGeneration(newPop, n+1, gaConfig);
+        // nextGeneration(newPop, n+1, gaConfig);
         return;
     } else {
         workDetail.stats = stats;
@@ -141,6 +143,8 @@ function nextGeneration(pop, n, gaConfig, workDetail) {
     
     
 }
+
+
 
 function makeID() {
     // Math.random should be unique because of its seeding algorithm.
@@ -166,12 +170,6 @@ var config = {
         totalGenerations: 100
     }
 
-var pop = [];
-
-var child = {
-    route: [],
-    fitness: 0,
-}
 
 var stats = [];
 
