@@ -106,77 +106,77 @@
 
         document.getElementById("restart").onclick = restart;
 
-        // var workDetails2 = {
-        //     "parcelList": [{
-        //         "x": 152,
-        //         "y": 2,
-        //         "weight": 17
-        //     }, {
-        //         "x": 152,
-        //         "y": 25,
-        //         "weight": 20
-        //     }, {
-        //         "x": 89,
-        //         "y": 93,
-        //         "weight": 19
-        //     }, {
-        //         "x": 166,
-        //         "y": 117,
-        //         "weight": 4
-        //     }, {
-        //         "x": 67,
-        //         "y": 6,
-        //         "weight": 13
-        //     }, {
-        //         "x": 183,
-        //         "y": 98,
-        //         "weight": 20
-        //     }, {
-        //         "x": 40,
-        //         "y": 153,
-        //         "weight": 3
-        //     }, {
-        //         "x": 90,
-        //         "y": 44,
-        //         "weight": 2
-        //     }, {
-        //         "x": 152,
-        //         "y": 194,
-        //         "weight": 9
-        //     }, {
-        //         "x": 77,
-        //         "y": 56,
-        //         "weight": 10
-        //     }],
-        //     "config": {
-        //         "numDrones": 3,
-        //         "numPackages": 10,
-        //         "maxWeight": 10000,
-        //         "maxDistance": 10000,
-        //         "mutationRate": 0.15,
-        //         "tournamentSize": 5,
-        //         "populationSize": 10,
-        //         "maxGenerations": 20,
-        //         "homeLocation": {
-        //             "x": 0,
-        //             "y": 0,
-        //             "weight": 0
-        //         }
-        //     },
-        //     "genStats": [{
-        //         "mean": 5,
-        //         "max": 5,
-        //         "min": 5
-        //     }, {
-        //         "mean": 6,
-        //         "max": 6,
-        //         "min": 6
-        //     }, {
-        //         "mean": 7,
-        //         "max": 7,
-        //         "min": 7
-        //     }]
-        // };
+        var workDetails2 = {
+            "parcelList": [{
+                "x": 152,
+                "y": 2,
+                "weight": 17
+            }, {
+                "x": 152,
+                "y": 25,
+                "weight": 20
+            }, {
+                "x": 89,
+                "y": 93,
+                "weight": 19
+            }, {
+                "x": 166,
+                "y": 117,
+                "weight": 4
+            }, {
+                "x": 67,
+                "y": 6,
+                "weight": 13
+            }, {
+                "x": 183,
+                "y": 98,
+                "weight": 20
+            }, {
+                "x": 40,
+                "y": 153,
+                "weight": 3
+            }, {
+                "x": 90,
+                "y": 44,
+                "weight": 2
+            }, {
+                "x": 152,
+                "y": 194,
+                "weight": 9
+            }, {
+                "x": 77,
+                "y": 56,
+                "weight": 10
+            }],
+            "config": {
+                "numDrones": 3,
+                "numPackages": 10,
+                "maxWeight": 10000,
+                "maxDistance": 10000,
+                "mutationRate": 0.15,
+                "tournamentSize": 5,
+                "populationSize": 10,
+                "maxGenerations": 20,
+                "homeLocation": {
+                    "x": 0,
+                    "y": 0,
+                    "weight": 0
+                }
+            },
+            "genStats": [{
+                "mean": 5,
+                "max": 5,
+                "min": 5
+            }, {
+                "mean": 6,
+                "max": 6,
+                "min": 6
+            }, {
+                "mean": 7,
+                "max": 7,
+                "min": 7
+            }]
+        };
         //Global Data
         var packages = [];
         var config = {};
@@ -212,7 +212,7 @@
 
 
         //Testing
-        //init_client_page();
+        init_client_page(workDetails2);
 
 
         function init_client_page(workDetail) {
@@ -385,7 +385,7 @@
             maxAxis = d3.axisBottom()
                 .scale(maxScale);
 
-            svgContainer.append("g")
+            svgStats.append("g")
                 .attr("class", "axis")
                 .attr("transform", "translate(25," + 15 + ")")
                 .call(maxAxis);
