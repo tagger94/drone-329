@@ -127,10 +127,8 @@
         //Test if valid
         if (testJSONObject(workDetail)) {
             socket.emit('admin:pass:details', workDetail);
-            
-            setTimeout(function() {
-                window.location.href = "view.html";
-            }, 5000);
+
+            window.location.href = "view.html";
 
         }
 

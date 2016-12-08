@@ -100,7 +100,7 @@
 
         socket.once('server:pass:result', function(workDetail) {
             console.log('recieved final results', workDetail);
-            init_client_page();
+            init_client_page(workDetail);
         });
 
 
@@ -220,11 +220,11 @@
             packages = workDetail.parcelList;
             config = workDetail.config;
             stats = workDetail.genStats;
-            // results = workDetails2.bestRoute;
-            // numOfWorkers = workDetails2.numWorkers;
+            results = workDetail.bestRoute;
+            numOfWorkers = workDetail.numWorkers;
 
-            console.log(packages);
-            console.log(config);
+            // console.log(packages);
+            // console.log(config);
             // console.log(stats);
             // console.log(results);
             // console.log(numOfWorkers);

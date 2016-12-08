@@ -87,25 +87,33 @@ ADMIN METHODS
 
 admin.on('connect', function(socket) {
     console.log('admin page connected');
-    
+
     //check if done
-    if(done) {
+    if (done) {
         sendFinalResults();
     }
-    
-    socket.once('admin:pass:details', function(workDetail){
+
+    socket.once('admin:pass:details', function(workDetail) {
         //Write over values as it sees fit
         Object.assign(config, workDetail.config);
-        
+
         //Set parcelList
         parcelList = workDetail.parcelList;
-        
+
         //Start
         distributePopForWork(startingPop, 0);
     });
 });
 
 function sendFinalResults() {
+    var str = JSON.stringify({
+        parcelList: parcelList,
+        config: config,
+        bestRoute: bestRoute,
+        genStats: generationalStats,
+        numWorkers: Object.keys(worker.connected).length,
+    }, null, 2);
+    // console.log(str);
     admin.emit('server:pass:result', {
         parcelList: parcelList,
         config: config,
@@ -331,25 +339,30 @@ function getFittest(pop) {
 function getPopulationStats(pop) {
     var maxIndex = 0;
     var minIndex = 0;
-    var sum = pop[0];
+    var sum = pop[0].distance;
+
+    // console.log(pop);
+    var c = 0;
 
     //Loop through and find stat values
     for (var i = 1; i < pop.length; i++) {
-        if (pop[maxIndex] < pop[i]) {
+        if (pop[maxIndex].distance < pop[i].distance) {
             maxIndex = i;
         }
 
-        if (pop[minIndex] > pop[i]) {
+        if (pop[minIndex].distance > pop[i].distance) {
             minIndex = i;
         }
 
-        sum += pop[i];
+        sum += pop[i].distance;
+
+
     }
 
     //Return stat values
     return {
-        min: pop[minIndex],
-        max: pop[maxIndex],
+        min: pop[minIndex].distance,
+        max: pop[maxIndex].distance,
         mean: sum / pop.length
     }
 }
@@ -370,9 +383,9 @@ function randomParcelList() {
 
 function randomParcel() {
     var obj = {};
-    obj.x = Math.floor(Math.random() * randomConfig.maxX);
-    obj.y = Math.floor(Math.random() * randomConfig.maxY);
-    obj.weight = Math.floor(Math.random() * randomConfig.maxWeight) + 1;
+    obj.x = Math.floor(Math.random() * config.maxX);
+    obj.y = Math.floor(Math.random() * config.maxY);
+    obj.weight = Math.floor(Math.random() * 20) + 1;
 
     return obj;
 }
