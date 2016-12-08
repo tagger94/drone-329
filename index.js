@@ -51,6 +51,8 @@ setupWorkerSocket();
 
 distributePopForWork(startingPop, 0);
 
+
+
 /*
 RUNNER METHODS
 */
@@ -67,7 +69,7 @@ function doGeneration(pop, genNum) {
 
     if (genNum >= config.maxGenerations) {
         console.log('finished genetic algorithm');
-        //TODO emit final info to display
+        sendFinalResults(generationalStats, pop[0].route);
         return;
     }
 
@@ -83,12 +85,27 @@ ADMIN METHODS
 */
 
 admin.on('connect', function(socket) {
-
+    console.log('admin page connected');
+    
+    socket.once('admin:pass:workDetail', function(workDetail){
+        //Write over values as it sees fit
+        Object.assign(config, workDetail.config);
+        
+        //Set parcelList
+        parcelList = workDetail.parcelList;
+        
+        //Start
+        distributePopForWork(startingPop, 0);
+    });
 });
 
-function sendFinalResults(generationalStats, bestRoute) {
+function sendFinalResults(genStats, bestRoute) {
     admin.emit('server:pass:result', {
-
+        parcelList: parcelList,
+        config: config,
+        bestRoute: bestRoute,
+        genStats: genStats,
+        numWorkers: Object.keys(worker.connected).length,
     })
 }
 
@@ -132,11 +149,6 @@ function setupWorkerSocket() {
 
             //Send work to worker
             socket.emit('server:pass:work', work);
-
-            // console.log('sent work to ' + socket.name, work);
-
-            //Add to socket's given work
-            socket.givenWork.push(work);
         }
 
         socket.on('worker:pass:results', function(result) {

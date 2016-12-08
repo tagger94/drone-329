@@ -16,7 +16,7 @@
 <body style="background: slategray">
     <br>
     <br>
-    <div align="center" style="background: lightblue; width: 50%; height: 600px; margin: auto; border-radius: 100px;">
+    <div align="center" style="background: lightblue; width: 50%; margin: auto; border-radius: 100px;">
         <br>
         <h1>Drone Stats</h1>
         <table>
@@ -66,7 +66,7 @@
             </tr>
             <tr align="left">
                 <th></th>
-                <th><button onclick="addPackage()">Add Package</button></th>
+                <th><button onclick="addParcel()">Add Package</button></th>
             </tr>
             <tr align="left">
                 <th></th>
@@ -80,111 +80,196 @@
             <input id="file" type="file" name="file" accept=".json">
             <button onclick="handleJSONFile()">Submit</button>
         </form>
+        <br><br>
     </div>
 </body>
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script>
-    var packages = [];
+    var parcelList = [];
 
     var socket = io('/admin');
 
+    socket.on('connect', function() {
+        console.log('connected to server');
+    });
+
     function createOrder() {
-        addPackage();
+
+        //Grab data from HTML
         var maxWeight = document.getElementsByName("max_weight");
         var maxDistance = document.getElementsByName("max_distance");
-        var droneCount = document.getElementsByName("drone_count");
-        var cargoCapacity = document.getElementById("cargo_capacity");
-        //send these variables to some function + packages array.
+        var numDrones = document.getElementsByName("drone_count");
+        var numPackages = document.getElementsByName("cargo_capacity");
 
-        var droneStats = {
-            distance: maxDistance,
-            weight: maxWeight,
-            numDrones: droneCount,
-            numPackages: cargoCapacity
-        };
-        
-        socket.emit('admin:pass:details', {
-            droneStats: droneStats,
-            packages: packages
-        })
-
-        window.location.href = "view.html";
-    }
-
-    function addPackage() {
-
-        var packageInfo = {};
-
-        if(packageInfo.x === "")
-        {
-            packageInfo.x = Math.random() * 200;
-        }
-        else if(packageInfo.y === "")
-        {
-            packageInfo.y = Math.random() * 200;
-        }
-        if(packageInfo.weight === "")
-        {
-            packageInfo.weight = Math.random() * 10;
-        }
-
-        packageInfo.weight = document.getElementById("weight").value;
-        packageInfo.height = document.getElementById("height").value;
-        packageInfo.width = document.getElementById("width").value;
-        packageInfo.length = document.getElementById("length").value;
-        packageInfo.x = document.getElementById("x").value;
-        packageInfo.y = document.getElementById("y").value;
-
-        packages.push(packageInfo);
-
-        if (!(packageInfo.x === "" || packageInfo.y === "" || packageInfo.weight === "")) {
-            packages.push(packageInfo);
-            document.getElementById("weight").value = "";
-            document.getElementById("height").value = "";
-            document.getElementById("width").value = "";
-            document.getElementById("length").value = "";
-            document.getElementById("x").value = "";
-            document.getElementById("y").value = "";
-            document.getElementsByName("max_weight").value = "";
-            document.getElementsByName("max_distance").value = "";
-            document.getElementsByName("drone_count").value = "";
-            document.getElementById("cargo_capacity").value = "";
-        }
-
-        else {
-            alert("Null value in object");
-        }
-    }
-
-    function handleJSONFile()
-    {
-        var file = document.getElementById('file');
-
-        var object = JSON.parse(file);
-
-        if(object)
-        {
-            if(!(isNaN(object.maxWeight) && isNaN(object.maxDistance) && isNaN(object.droneCount) && isNaN(object.cargoCapacity)))
-            {
-                if(!(isNaN(object.weight) && isNaN(object.height) && isNaN(object.width) && isNaN(object.length) && isNaN(object.x) && isNaN(object.y)))
-                {
-                    var droneStats = {
-                        distance: maxDistance,
-                        weight: maxWeight,
-                        numDrones: droneCount,
-                        numPackages: cargoCapacity
-                    };
-
-                    socket.emit('admin:pass:details', {
-                        droneStats: droneStats,
-                        packages: packages
-                    })
-
-                    window.location.href = "view.html";
-                }
+        var workDetail = {
+            parcelList: parcelList,
+            config: {
+                maxDistance: maxDistance,
+                maxWeight: maxWeight,
+                numDrones: numDrones,
+                numPackages: numPackages
             }
         }
+
+        console.log('created workDetail ', workDetail);
+
+        sendOrder(workDetail);
     }
+
+
+    function handleJSONFile(workDetail) {
+        console.log('loaded workDetail ', workDetail);
+
+        //Attempt to send
+        sendOrder(workDetail);
+    }
+
+    function sendOrder(workDetail) {
+        //Test if valid
+        if (testJSONObject(workDetail)) {
+            socket.emit('admin:pass:details', workDetail);
+            window.location.href = "view.html";
+        }
+
+    }
+
+    function addParcel() {
+        //Create empty parcel
+        var parcelInfo = {};
+
+        //Add Values
+        parcelInfo.weight = document.getElementById("weight").value;
+        parcelInfo.height = document.getElementById("height").value;
+        parcelInfo.width = document.getElementById("width").value;
+        parcelInfo.length = document.getElementById("length").value;
+        parcelInfo.x = document.getElementById("x").value;
+        parcelInfo.y = document.getElementById("y").value;
+
+        //Check if x has data
+        if (parcelInfo.x === "") {
+            parcelInfo.x = Math.random() * 200;
+        }
+
+        //Check if y has data
+        if (parcelInfo.y === "") {
+            parcelInfo.y = Math.random() * 200;
+        }
+
+        //Check if weight has data
+        if (parcelInfo.weight === "") {
+            parcelInfo.weight = Math.random() * 10;
+        }
+
+        console.log('adding parcel ', parcelInfo);
+
+        //Add to array of parcels
+        parcelList.push(parcelInfo);
+
+        //Clear HTML
+        document.getElementById("weight").value = "";
+        document.getElementById("height").value = "";
+        document.getElementById("width").value = "";
+        document.getElementById("length").value = "";
+        document.getElementById("x").value = "";
+        document.getElementById("y").value = "";
+
+    }
+
+    function testJSONObject(workDetail) {
+        if (!(workDetail.config)) {
+            alert('JSON config object is missing');
+            return false;
+        }
+
+        if (!(workDetail.parcelList)) {
+            alert('JSON parcelList object is missing');
+            return false;
+        }
+
+        return testConfigObject(workDetail.config) && testParcelList(workDetail.parcelList);
+
+    }
+
+    function testConfigObject(config) {
+        if (!(config.maxWeight)) {
+            alert('JSON.config is missing maxWeight property');
+            return false;
+        }
+
+        if (!(config.maxDistance)) {
+            alert('JSON.config is missing maxDistance property');
+            return false;
+        }
+
+        if (!(config.numPackages)) {
+            alert('JSON.config is missing numPackages property');
+            return false;
+        }
+
+        if (!(config.numDrones)) {
+            alert('JSON.config is missing numDrones property');
+            return false;
+        }
+
+        //Passed all tests
+        return true;
+
+    }
+
+    function testParcelList(parcelList) {
+        //Check if is an array
+        if (!Array.isArray(parcelList)) {
+            alert('JSON.parcelList is not an array');
+            return false;
+        }
+
+        for (var i = 0; i < parcelList.length; i++) {
+            if (!testParcel(parcelList[i], i)) {
+                return false;
+            }
+        }
+
+        //Passed All Tests
+        return true
+    }
+
+    function testParcel(parcel, index) {
+        if (!(parcel.weight)) {
+            alert('JSON.parcelList[' + index + '] is missing weight property');
+            return false;
+        }
+
+        if (!(parcel.x)) {
+            alert('JSON.parcelList[' + index + '] is missing x property');
+            return false;
+        }
+
+        if (!(parcel.y)) {
+            alert('JSON.parcelList[' + index + '] is missing y property');
+            return false;
+        }
+
+        return true;
+    }
+
+    function handleFileSelect(evt) {
+        var file = evt.target.files[0]; // FileList object
+
+        var reader = new FileReader();
+
+        // Closure to capture the file information.
+        reader.onload = (function(theFile) {
+            return function(e) {
+                var obj = JSON.parse(e.target.result);
+                
+                handleJSONFile(obj);
+            };
+        })(file);
+
+        reader.readAsText(file);
+    }
+
+    document.getElementById('file').addEventListener('change', handleFileSelect, false);
 </script>
 
 </html>
