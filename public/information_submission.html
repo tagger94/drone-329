@@ -70,15 +70,15 @@
             </tr>
             <tr align="left">
                 <th></th>
-                <th><button>Submit</button></th>
+                <th><button onclick="createOrder()">Submit</button></th>
             </tr>
         </table>
 
         <h3>- OR - </h3>
 
         <form>
-            <input type="file" name="file" accept=".json">
-            <button>Submit</button>
+            <input id="file" type="file" name="file" accept=".json">
+            <button onclick="handleJSONFile()">Submit</button>
         </form>
     </div>
 </body>
@@ -96,21 +96,34 @@
         //send these variables to some function + packages array.
 
         var droneStats = {
-            maxDistance,
-            maxWeight,
+            distance: maxDistance,
+            weight: maxWeight,
             numDrones: droneCount,
             numPackages: cargoCapacity,
         };
         
         socket.emit('admin:pass:details', {
-            droneStats,
-            packages
+            droneStats: droneStats,
+            packages: packages
         })
     }
 
     function addPackage() {
 
         var packageInfo = {};
+
+        if(packageInfo.x === "")
+        {
+            packageInfo.x = Math.random() * 200;
+        }
+        else if(packageInfo.y === "")
+        {
+            packageInfo.y = Math.random() * 200;
+        }
+        if(packageInfo.weight === "")
+        {
+            packageInfo.weight = Math.random() * 10;
+        }
 
         packageInfo.weight = document.getElementById("weight").value;
         packageInfo.height = document.getElementById("height").value;
@@ -119,6 +132,7 @@
         packageInfo.x = document.getElementById("x").value;
         packageInfo.y = document.getElementById("y").value;
 
+        packages.push(packageInfo);
 
         if (!(packageInfo.x === "" || packageInfo.y === "" || packageInfo.weight === "")) {
             packages.push(packageInfo);
@@ -133,6 +147,34 @@
 
         else {
             alert("Null value in object");
+        }
+    }
+
+    function handleJSONFile()
+    {
+        var file = document.getElementById('file');
+
+        var object = JSON.parse(file);
+
+        if(object)
+        {
+            if(!(isNaN(object.maxWeight) && isNaN(object.maxDistance) && isNaN(object.droneCount) && isNaN(object.cargoCapacity)))
+            {
+                if(!(isNaN(object.weight) && isNaN(object.height) && isNaN(object.width) && isNaN(object.length) && isNaN(object.x) && isNaN(object.y)))
+                {
+                    var droneStats = {
+                        distance: maxDistance,
+                        weight: maxWeight,
+                        numDrones: droneCount,
+                        numPackages: cargoCapacity
+                    };
+
+                    socket.emit('admin:pass:details', {
+                        droneStats: droneStats,
+                        packages: packages
+                    })
+                }
+            }
         }
     }
 </script>
