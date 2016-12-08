@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <title>Genetic Delivery</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
     <style>
         body {
             background: lightblue;
@@ -24,6 +23,45 @@
             height: auto;
             display: block;
         }
+        
+        #svgCanvasView {
+            max-width: 800;
+            height: 800;
+            background-color: white;
+        }
+        
+        #statView {
+            max-width: 800;
+            height: 800;
+            background-color: white;
+        }
+        
+        button {
+            color: black;
+            width: 85px;
+            background: lightblue;
+        }
+        
+        h1 {
+            color: white;
+        }
+        
+        svg {
+            width: 800px;
+            height: 800px;
+        }
+        
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+        
+        .axis text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
     </style>
 </head>
 
@@ -35,50 +73,187 @@
     <div id="header">
         <hr>
         <h1 align="center">Genetic Delivery Results</h1>
-        <br><input type="button" id="restart"
+        <hr>
+        <div text-align="center" align="center" font-color="Black">
+            <button type="button" id="restart">Restart</button>
+        </div>
         <hr>
     </div>
 
+    <h2>Path Graph:</h2>
+
     <div id="svgCanvasView">
     </div>
+
+    <br>
+    <h2>Generation Statistics:</h2>
+
+    <div id="statView">
+    </div>
+
     </header>
     <script type="text/javascript">
-        var socket = io('/admin');
-        socket.on('connect', function() {
-            socket.emit('request xy coords', "");
-            socket.once('admin:pass:details', init_client_page);
-        })
+        // var socket = io('/admin');
+        // socket.on('connect', function() {
+        //     socket.once('server:pass:result', init_client_page);
+        // })
 
+        document.getElementById("restart").onclick = restart;
 
+        var workDetails2 = {
+            "parcelList": [{
+                "x": 152,
+                "y": 2,
+                "weight": 17
+            }, {
+                "x": 152,
+                "y": 25,
+                "weight": 20
+            }, {
+                "x": 89,
+                "y": 93,
+                "weight": 19
+            }, {
+                "x": 166,
+                "y": 117,
+                "weight": 4
+            }, {
+                "x": 67,
+                "y": 6,
+                "weight": 13
+            }, {
+                "x": 183,
+                "y": 98,
+                "weight": 20
+            }, {
+                "x": 40,
+                "y": 153,
+                "weight": 3
+            }, {
+                "x": 90,
+                "y": 44,
+                "weight": 2
+            }, {
+                "x": 152,
+                "y": 194,
+                "weight": 9
+            }, {
+                "x": 77,
+                "y": 56,
+                "weight": 10
+            }],
+            "config": {
+                "numDrones": 3,
+                "numPackages": 10,
+                "maxWeight": 10000,
+                "maxDistance": 10000,
+                "mutationRate": 0.15,
+                "tournamentSize": 5,
+                "populationSize": 10,
+                "maxGenerations": 20,
+                "homeLocation": {
+                    "x": 0,
+                    "y": 0,
+                    "weight": 0
+                }
+            },
+            "genStats": [{
+                "mean": 5,
+                "max": 5,
+                "min": 5
+            }, {
+                "mean": 6,
+                "max": 6,
+                "min": 6
+            }, {
+                "mean": 7,
+                "max": 7,
+                "min": 7
+            }]
+        };
         //Global Data
-        var packages = {};
-        var droneConfig = {};
+        var packages = [];
+        var config = {};
         var stats = {};
         var results = {};
+        var numOfWorkers = 0;
+
+        // d3 vars and drawling vars
+        var svgContainer;
+        var svgStats;
+        var circles;
+        var width = 800;
+        var height = 800;
+        var pad = 5;
+
+        var homeX = 0;
+        var homeY = 0;
+
+        var xScale;
+        var yScale;
+
+        var xAxis;
+        var yAxis;
 
         //Testing
-        //init_client_page();
+        init_client_page();
 
 
-        function init_client_page(workDetials) {
-            packages = workDetials.packages;
-            droneConfig = workDetials.droneStats;
-            stats = workDetails.stats;
-            results = workDetails.finalRoute;
-            
-            document.getElementById("restart").onclick = restart;
+        function init_client_page() {
+
+            packages = workDetails2.parcelList;
+            config = workDetails2.config;
+            // stats = workDetails2.genStats;
+            // results = workDetails2.bestRoute;
+            // numOfWorkers = workDetails2.numWorkers;
+
+            console.log(packages);
+            console.log(config);
+            // console.log(stats);
+            // console.log(results);
+            // console.log(numOfWorkers);
+
+
 
             init_canvas();
-            // draw_circles();
-            // draw_paths();
+            draw_home();
+            draw_circles();
+            draw_labels();
+            draw_path_axis();
 
+            draw_stats();
+            // draw_paths();
         }
 
         function init_canvas() {
-            var svgContainer = d3.select("body").select("#svgCanvasView").append("svg")
-                .attr("width", window.document.width)
-                .attr("height", window.document.width - document.getElementById('header').clientHeight);
-            //alert(window.document.width + "");
+            svgContainer = d3.select("body").select("#svgCanvasView").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+            //window.document.width - document.getElementById('header').clientHeight
+
+            homeX = config.homeLocation.x;
+            homeY = config.homeLocation.y;
+
+            var xMax = 0;
+            var yMax = 0;
+
+            for (var i = 0; i < packages.length; i++) {
+                if (packages[i].x > xMax) {
+                    xMax = packages[i].x;
+                }
+                if (packages[i].y > yMax) {
+                    yMax = packages[i].y;
+                }
+            }
+
+            xScale = d3.scaleLinear()
+                .domain([0, xMax])
+                .range([25, width - 25]);
+
+            yScale = d3.scaleLinear()
+                .domain([0, yMax])
+                .range([15, height - 25]);
+
         }
 
         function clear() {
@@ -86,29 +261,111 @@
         }
 
         function draw_circles() {
-            //clear();
-            var circles = d3.select("body").select("#svgCanvasView").selectAll("circle")
-                .data(x_coords)
+            circles = svgContainer.selectAll("circle")
+                .data(packages)
                 .enter()
-                .append("circle");
-            var circleAttributes = circles
+                .append("circle")
                 .attr("cx", function(d) {
-                    return d;
+                    return xScale(d.x + 10);
                 })
-                .attr("cy", function(d, i) {
-                    return y_coords[i];
+                .attr("cy", function(d) {
+                    return yScale(d.y + 10);
                 })
-                .attr("r", 3)
-                .style("fill", "red");
+                .attr("r", 7)
+                .style("fill", "black");
 
+        }
+
+        function draw_home() {
+            svgContainer.append("rect")
+                .attr("x", xScale(homeX))
+                .attr("y", yScale(homeY) + 15)
+                .attr("width", 25)
+                .attr("height", 25)
+                .style("fill", "blue");
+        }
+
+        function draw_labels() {
+            svgContainer.selectAll("text")
+                .data(packages)
+                .enter()
+                .append("text")
+                .text(function(d) {
+                    return d.weight + "";
+                })
+                .attr("x", function(d) {
+                    return xScale(d.x + 10);
+                })
+                .attr("y", function(d) {
+                    return yScale(d.y + 8);
+                })
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "14px")
+                .attr("fill", "red");
+
+            svgContainer.append("text")
+                .text("H")
+                .attr("x", xScale(homeX) + 8)
+                .attr("y", yScale(homeY) + 17 + 15)
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "14px")
+                .attr("fill", "white");
         }
 
         function draw_paths() {
-            
+
         }
-        
-        function restart(){
-            link("information_submission.html")
+
+        function draw_path_axis() {
+            xAxis = d3.axisBottom()
+                .scale(xScale);
+
+            yAxis = d3.axisLeft()
+                .scale(yScale);
+
+            svgContainer.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + (height - 25) + ")")
+                .call(xAxis);
+
+            svgContainer.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(25," + 15 + ")")
+                .call(yAxis);
+
+
+        }
+
+        function draw_stats() {
+            svgStats = d3.select("body").select("#statView").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            var meanMax = 0;
+            var maxMax = 0;
+            var minMax = 0;
+
+            for (var i = 0; i < packages.length; i++) {
+                if (packages[i].x > xMax) {
+                    xMax = packages[i].x;
+                }
+                if (packages[i].y > yMax) {
+                    yMax = packages[i].y;
+                }
+            }
+
+            xScale = d3.scaleLinear()
+                .domain([0, xMax])
+                .range([25, width - 25]);
+
+            yScale = d3.scaleLinear()
+                .domain([0, yMax])
+                .range([15, height - 25]);
+        }
+
+
+        function restart() {
+            window.location.href = "information_submission.html";
         }
     </script>
 </body>
