@@ -32,109 +32,83 @@
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 
-    <div id="header" width="100%">
-        <h1 align="center">Genetic Delivery</h1>
+    <div id="header">
         <hr>
-        <span width="33%">
-            <input id="editConfig" type="button" value="Edit Configuration">&nbsp&nbsp
-        </span>
-        <span width="33%">
-            <input id="loadCoords" type="button" value="Load New Coordinates">&nbsp&nbsp
-        </span>
-        <span width="33%">
-            <input id="runAlgo" type="button" value="Find Path">
-        </span>
-        <br><br>
+        <h1 align="center">Genetic Delivery Results</h1>
+        <br><input type="button" id="restart"
+        <hr>
     </div>
 
     <div id="svgCanvasView">
     </div>
     </header>
     <script type="text/javascript">
-        // var socket = io('/client');
-        // socket.on('connect', function() {
-        //socket.emit('request xy coords', "");
-
-        //socket.once('xy coords', init_client_page);
-        // })
-
-
-        var x_coords = [];
-        var y_coords = [];
+        var socket = io('/admin');
+        socket.on('connect', function() {
+            socket.emit('request xy coords', "");
+            socket.once('admin:pass:details', init_client_page);
+        })
 
 
-        function init_client_page(xy_coords) {
-            document.getElementById("editConfig").onclick = edit_config;
-            document.getElementById("loadCoords").onclick = load_xy_coords;
-            document.getElementById("runAlgo").onclick = start_algo;
+        //Global Data
+        var packages = {};
+        var droneConfig = {};
+        var stats = {};
+        var results = {};
 
-            parse_xy_coords(xy_coords);
+        //Testing
+        //init_client_page();
+
+
+        function init_client_page(workDetials) {
+            packages = workDetials.packages;
+            droneConfig = workDetials.droneStats;
+            stats = workDetails.stats;
+            results = workDetails.finalRoute;
+            
+            document.getElementById("restart").onclick = restart;
 
             init_canvas();
-            draw_circles();
-            draw_paths();
+            // draw_circles();
+            // draw_paths();
 
-        }
-
-        function parse_xy_coords(xy_coords) {
-            var i;
-            var x_index = 0;
-            var y_index = 0;
-
-            for (i = 0; i < xy_coords.length; i++) {
-                if (xy_coords[i] % 2 == 0) {
-                    x_coords[x_index] = xy_coords[i];
-                    x_index++;
-                }
-                else {
-                    y_coords[y_index] = xy_coords[i];
-                    y_index++;
-                }
-            }
         }
 
         function init_canvas() {
-            var svgContainer = d3.select("body").append("svg")
-                .attr("width", window.document.width - )
-                .attr("height", 200);
+            var svgContainer = d3.select("body").select("#svgCanvasView").append("svg")
+                .attr("width", window.document.width)
+                .attr("height", window.document.width - document.getElementById('header').clientHeight);
+            //alert(window.document.width + "");
+        }
 
+        function clear() {
+            d3.select("body").select("#svgCanvasView").select("svg").html("");
         }
 
         function draw_circles() {
-            var circles = svgContainer.selectAll("circle")
-                .data(jsonCircles)
+            //clear();
+            var circles = d3.select("body").select("#svgCanvasView").selectAll("circle")
+                .data(x_coords)
                 .enter()
                 .append("circle");
             var circleAttributes = circles
                 .attr("cx", function(d) {
-                    return d.x_axis;
+                    return d;
                 })
-                .attr("cy", function(d) {
-                    return d.y_axis;
+                .attr("cy", function(d, i) {
+                    return y_coords[i];
                 })
-                .attr("r", function(d) {
-                    return d.radius;
-                })
-                .style("fill", function(d) {
-                    return d.color;
-                });
+                .attr("r", 3)
+                .style("fill", "red");
 
         }
 
         function draw_paths() {
-
+            
         }
-
-        function edit_config() {
-            window.open("information_submissior.html");
-        }
-
-        function load_xy_coords() {
-            //from txt or server file system.
-        }
-
-        function start_algo() {
-
+        
+        function restart(){
+            link("information_submission.html")
         }
     </script>
 </body>
