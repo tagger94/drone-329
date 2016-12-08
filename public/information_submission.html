@@ -116,7 +116,6 @@
         sendOrder(workDetail);
     }
 
-
     function handleJSONFile(workDetail) {
         console.log('loaded workDetail ', workDetail);
 
@@ -128,7 +127,11 @@
         //Test if valid
         if (testJSONObject(workDetail)) {
             socket.emit('admin:pass:details', workDetail);
-            window.location.href = "view.html";
+            
+            setTimeout(function() {
+                window.location.href = "view.html";
+            }, 5000);
+
         }
 
     }
@@ -261,7 +264,7 @@
         reader.onload = (function(theFile) {
             return function(e) {
                 var obj = JSON.parse(e.target.result);
-                
+
                 handleJSONFile(obj);
             };
         })(file);

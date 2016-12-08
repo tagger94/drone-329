@@ -17,12 +17,6 @@ server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function() 
     // console.log("listening at", addr.address + ":" + addr.port);
 });
 
-var randomConfig = {
-    maxX: 200,
-    maxY: 200,
-    maxWeight: 20
-}
-
 var config = {
     numDrones: 3,
     numPackages: 10,
@@ -32,6 +26,8 @@ var config = {
     tournamentSize: 5,
     populationSize: 10,
     maxGenerations: 20,
+    maxX: 200,
+    maxY: 200,
     homeLocation: {
         x: 100,
         y: 100,
@@ -41,15 +37,18 @@ var config = {
 
 var parcelList = randomParcelList();
 var startingPop = randomPop();
+var bestRoute = [];
 
 var generationalStats = [];
+
+var done = false;
 
 /*
 TESTING
 */
 setupWorkerSocket();
 
-distributePopForWork(startingPop, 0);
+// distributePopForWork(startingPop, 0);
 
 
 
@@ -69,7 +68,9 @@ function doGeneration(pop, genNum) {
 
     if (genNum >= config.maxGenerations) {
         console.log('finished genetic algorithm');
-        sendFinalResults(generationalStats, pop[0].route);
+        bestRoute = getFittest(pop).route;
+        sendFinalResults();
+        done = true;
         return;
     }
 
@@ -87,7 +88,12 @@ ADMIN METHODS
 admin.on('connect', function(socket) {
     console.log('admin page connected');
     
-    socket.once('admin:pass:workDetail', function(workDetail){
+    //check if done
+    if(done) {
+        sendFinalResults();
+    }
+    
+    socket.once('admin:pass:details', function(workDetail){
         //Write over values as it sees fit
         Object.assign(config, workDetail.config);
         
@@ -99,12 +105,12 @@ admin.on('connect', function(socket) {
     });
 });
 
-function sendFinalResults(genStats, bestRoute) {
+function sendFinalResults() {
     admin.emit('server:pass:result', {
         parcelList: parcelList,
         config: config,
         bestRoute: bestRoute,
-        genStats: genStats,
+        genStats: generationalStats,
         numWorkers: Object.keys(worker.connected).length,
     })
 }

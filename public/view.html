@@ -93,10 +93,15 @@
 
     </header>
     <script type="text/javascript">
-        // var socket = io('/admin');
-        // socket.on('connect', function() {
-        //     socket.once('server:pass:result', init_client_page);
-        // })
+        var socket = io('/admin');
+        socket.on('connect', function() {
+
+        });
+
+        socket.once('server:pass:result', function(workDetail) {
+            console.log('recieved final results', workDetail);
+            init_client_page();
+        });
 
         document.getElementById("restart").onclick = restart;
 
