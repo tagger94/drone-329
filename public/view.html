@@ -95,7 +95,7 @@
     <script type="text/javascript">
         var socket = io('/admin');
         socket.on('connect', function() {
-
+            console.log('connected to server');
         });
 
         socket.once('server:pass:result', function(workDetail) {
@@ -103,79 +103,80 @@
             init_client_page();
         });
 
+
         document.getElementById("restart").onclick = restart;
 
-        var workDetails2 = {
-            "parcelList": [{
-                "x": 152,
-                "y": 2,
-                "weight": 17
-            }, {
-                "x": 152,
-                "y": 25,
-                "weight": 20
-            }, {
-                "x": 89,
-                "y": 93,
-                "weight": 19
-            }, {
-                "x": 166,
-                "y": 117,
-                "weight": 4
-            }, {
-                "x": 67,
-                "y": 6,
-                "weight": 13
-            }, {
-                "x": 183,
-                "y": 98,
-                "weight": 20
-            }, {
-                "x": 40,
-                "y": 153,
-                "weight": 3
-            }, {
-                "x": 90,
-                "y": 44,
-                "weight": 2
-            }, {
-                "x": 152,
-                "y": 194,
-                "weight": 9
-            }, {
-                "x": 77,
-                "y": 56,
-                "weight": 10
-            }],
-            "config": {
-                "numDrones": 3,
-                "numPackages": 10,
-                "maxWeight": 10000,
-                "maxDistance": 10000,
-                "mutationRate": 0.15,
-                "tournamentSize": 5,
-                "populationSize": 10,
-                "maxGenerations": 20,
-                "homeLocation": {
-                    "x": 0,
-                    "y": 0,
-                    "weight": 0
-                }
-            },
-            "genStats": [{
-                "mean": 5,
-                "max": 5,
-                "min": 5
-            }, {
-                "mean": 6,
-                "max": 6,
-                "min": 6
-            }, {
-                "mean": 7,
-                "max": 7,
-                "min": 7
-            }]
-        };
+        // var workDetails2 = {
+        //     "parcelList": [{
+        //         "x": 152,
+        //         "y": 2,
+        //         "weight": 17
+        //     }, {
+        //         "x": 152,
+        //         "y": 25,
+        //         "weight": 20
+        //     }, {
+        //         "x": 89,
+        //         "y": 93,
+        //         "weight": 19
+        //     }, {
+        //         "x": 166,
+        //         "y": 117,
+        //         "weight": 4
+        //     }, {
+        //         "x": 67,
+        //         "y": 6,
+        //         "weight": 13
+        //     }, {
+        //         "x": 183,
+        //         "y": 98,
+        //         "weight": 20
+        //     }, {
+        //         "x": 40,
+        //         "y": 153,
+        //         "weight": 3
+        //     }, {
+        //         "x": 90,
+        //         "y": 44,
+        //         "weight": 2
+        //     }, {
+        //         "x": 152,
+        //         "y": 194,
+        //         "weight": 9
+        //     }, {
+        //         "x": 77,
+        //         "y": 56,
+        //         "weight": 10
+        //     }],
+        //     "config": {
+        //         "numDrones": 3,
+        //         "numPackages": 10,
+        //         "maxWeight": 10000,
+        //         "maxDistance": 10000,
+        //         "mutationRate": 0.15,
+        //         "tournamentSize": 5,
+        //         "populationSize": 10,
+        //         "maxGenerations": 20,
+        //         "homeLocation": {
+        //             "x": 0,
+        //             "y": 0,
+        //             "weight": 0
+        //         }
+        //     },
+        //     "genStats": [{
+        //         "mean": 5,
+        //         "max": 5,
+        //         "min": 5
+        //     }, {
+        //         "mean": 6,
+        //         "max": 6,
+        //         "min": 6
+        //     }, {
+        //         "mean": 7,
+        //         "max": 7,
+        //         "min": 7
+        //     }]
+        // };
         //Global Data
         var packages = [];
         var config = {};
@@ -197,18 +198,28 @@
         var xScale;
         var yScale;
 
+        var meanScale;
+        var maxScale;
+        var minScale;
+
         var xAxis;
         var yAxis;
 
+        var meanAxis;
+        var maxAxis;
+        var minAxis;
+
+
+
         //Testing
-        init_client_page();
+        //init_client_page();
 
 
-        function init_client_page() {
+        function init_client_page(workDetail) {
 
-            packages = workDetails2.parcelList;
-            config = workDetails2.config;
-            // stats = workDetails2.genStats;
+            packages = workDetail.parcelList;
+            config = workDetail.config;
+            stats = workDetail.genStats;
             // results = workDetails2.bestRoute;
             // numOfWorkers = workDetails2.numWorkers;
 
@@ -350,22 +361,34 @@
             var maxMax = 0;
             var minMax = 0;
 
-            for (var i = 0; i < packages.length; i++) {
-                if (packages[i].x > xMax) {
-                    xMax = packages[i].x;
+            for (var i = 0; i < stats.length; i++) {
+                if (stats[i].mean > meanMax) {
+                    meanMax = stats[i].mean;
                 }
-                if (packages[i].y > yMax) {
-                    yMax = packages[i].y;
+                if (stats[i].max > maxMax) {
+                    maxMax = stats[i].max;
+                }
+                if (stats[i].min > minMax) {
+                    minMax = stats[i].min;
                 }
             }
 
-            xScale = d3.scaleLinear()
-                .domain([0, xMax])
+            var max = Math.max(meanMax, maxMax, minMax);
+
+            console.log(max);
+
+            //Axis
+            maxScale = d3.scaleLinear()
+                .domain([0, max])
                 .range([25, width - 25]);
 
-            yScale = d3.scaleLinear()
-                .domain([0, yMax])
-                .range([15, height - 25]);
+            maxAxis = d3.axisBottom()
+                .scale(maxScale);
+
+            svgContainer.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(25," + 15 + ")")
+                .call(maxAxis);
         }
 
 
