@@ -89,6 +89,7 @@
     var socket = io('/admin');
 
     function createOrder() {
+        addPackage();
         var maxWeight = document.getElementsByName("max_weight");
         var maxDistance = document.getElementsByName("max_distance");
         var droneCount = document.getElementsByName("drone_count");
@@ -99,13 +100,15 @@
             distance: maxDistance,
             weight: maxWeight,
             numDrones: droneCount,
-            numPackages: cargoCapacity,
+            numPackages: cargoCapacity
         };
         
         socket.emit('admin:pass:details', {
             droneStats: droneStats,
             packages: packages
         })
+
+        window.location.href = "view.html";
     }
 
     function addPackage() {
@@ -142,7 +145,10 @@
             document.getElementById("length").value = "";
             document.getElementById("x").value = "";
             document.getElementById("y").value = "";
-
+            document.getElementsByName("max_weight").value = "";
+            document.getElementsByName("max_distance").value = "";
+            document.getElementsByName("drone_count").value = "";
+            document.getElementById("cargo_capacity").value = "";
         }
 
         else {
@@ -173,6 +179,8 @@
                         droneStats: droneStats,
                         packages: packages
                     })
+
+                    window.location.href = "view.html";
                 }
             }
         }
