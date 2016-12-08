@@ -1,14 +1,17 @@
-var config = {
-    mutationRate: 0.015,
-    tournamentSize: 5,
-    populationSize: 20,
-    routeSize: 20,
-    elitsm: true,
+function setup(config) {
+    if (config) {
+        config = config;
+    }
 }
 
-export function setup(config) {
-    config = config;
-}
+var config = {
+        mutationRate: 0.015,
+        tournamentSize: 5,
+        populationSize: 20,
+        routeSize: 20,
+        elitsm: true,
+        totalGenerations: 100
+    }
 
 var pop = [];
 
@@ -17,7 +20,9 @@ var child = {
     fitness: 0,
 }
 
-export function evolvePopulation(pop) {
+var stats = [];
+
+function evolvePopulation(pop) {
     var newPop = [];
     // Keep our best individual if elitism is enabled
     var elitismOffset = 0;
@@ -43,8 +48,18 @@ export function evolvePopulation(pop) {
     for (var i = elitismOffset; i < config.populationSize; i++) {
         pop[i] = mutate(pop[i]);
     }
+    
+    stats.push(calcStats(pop));
 
     return newPop;
+}
+
+function calcStats(pop) {
+    var stat = {};
+    
+    
+    
+    return stat;
 }
 
 function mutate(child) {
@@ -64,14 +79,15 @@ function mutate(child) {
             child.route[index1] = parcel2;
         }
     }
-    
+
     return child;
 }
 
 function crossover(parcel1, parcel2) {
-    if(parcel1.fitness > parcel2.fitness){
+    if (parcel1.fitness > parcel2.fitness) {
         return JSON.parse(JSON.stringify(parcel1));
-    } else {
+    }
+    else {
         return JSON.parse(JSON.stringify(parcel2));
     }
 }
@@ -89,7 +105,7 @@ function tournamentSelection(pop) {
     return getFittest(tourn);
 }
 
-export function getFittest(pop) {
+function getFittest(pop) {
     var best = 0;
     for (var i = 1; i < pop.length; i++) {
         if (pop[i].fitness > pop[best].fitness) {
