@@ -11,170 +11,224 @@ var io = socketio.listen(server);
 var worker = io.of('/worker');
 var admin = io.of('/admin');
 
-// var GA = require('./genetic-dispersal.js');
-
-var gaConfig = {
-    mutationRate: 0.015,
-    tournamentSize: 5,
-    populationSize: 20,
-    routeSize: 20,
-    elitsm: true,
-}
-
-/********
-Default Methods
-*********/
-
 router.use(express.static(path.join(__dirname, 'public')));
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function() {
     var addr = server.address();
-    console.log("Chat server listening at", addr.address + ":" + addr.port);
+    // console.log("listening at", addr.address + ":" + addr.port);
 });
 
-var packages = [];
-
-for (var i = 0; i < 10; i++) {
-    packages.push({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        weight: Math.round(Math.random() * 10) + 1,
-    });
-}
-
-// console.log(packages);
-
-var workDetail = {
-    droneStats: {
-        maxWeight: 30,
-        maxDistance: 1200,
-        numDrones: 3,
-        numPackages: 3,
-    },
-    packages: packages
-}
-
-admin.on('connect', function(socket) {
-    socket.on('admin:pass:details', function(wd) {
-        workDetail = wd;
-        console.log(wd);
-        startGA();
-    });
-})
-
-
-worker.on('connect', function(socket) {
-    //create unique Name
-    socket.name = makeID();
-    console.log(socket.name + ' connected');
-
-    socket.on('worker:pass:distance', function(obj) {
-        console.log(obj);
-    });
-
-    //Assign name
-    socket.emit('server:set:name', socket.name);
-
-    socket.emit('server:pass:detail', workDetail);
-
-    // socket.emit('server:pass:work', {
-    //     id: 0,
-    //     packageIndex: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    // });
-
-    // socket.emit('server:pass:work', {
-    //     id: 1,
-    //     packageIndex: [1, 0, 2, 3, 4, 6, 5, 7, 8, 9]
-    // });
-
-    // socket.emit('server:pass:work', {
-    //     id: 2,
-    //     packageIndex: [0, 1, 2, 3, 4, 5, 6, 7, 9, 8]
-    // });
-})
-
-function main() {
-
-}
-
-function startGA(workDetail) {
-
-    gaConfig = {
-        mutationRate: 0.015,
-        tournamentSize: 5,
-        populationSize: 20,
-        routeSize: 20,
-        elitsm: true,
-        totalGenerations: 100
-    }
-
-    var defaultDetail = {
-        droneStats: {
-            maxWeight: 30,
-            maxDistance: 1200,
-            numDrones: 3,
-            numPackages: 3,
-        },
-        packages: packages
-    }
-    
-    if(workDetail) {
-        gaConfig.routeSize = workDetail.numPackages;
-    }
-    
-    setup(gaConfig);
-
-}
-var counter = 0;
-var genNumber = 0;
-
-function nextGeneration(pop, gaConfig, workDetail) {
-    var newPop = evolvePopulation(pop);
-    
-    if(n < gaConfig.totalGenerations) {
-        // nextGeneration(newPop, n+1, gaConfig);
-        return;
-    } else {
-        workDetail.stats = stats;
-        workDetail.finalRoute;
-        // admin.emit('server:final:result', GA.stats);
-        admin.emit('server:pass:details', workDetail);
-        return;
-    }
-    
-    
-}
-
-
-
-function makeID() {
-    // Math.random should be unique because of its seeding algorithm.
-    // Convert it to base 36 (numbers + letters), and grab the first 9 characters
-    // after the decimal.
-    return '_' + Math.random().toString(36).substr(2, 9);
-};
-
-///////////////////////
-
-function setup(config) {
-    if (config) {
-        config = config;
-    }
+var randomConfig = {
+    maxX: 200,
+    maxY: 200,
+    maxWeight: 20
 }
 
 var config = {
-        mutationRate: 0.015,
-        tournamentSize: 5,
-        populationSize: 20,
-        routeSize: 20,
-        elitsm: true,
-        totalGenerations: 100
+    numDrones: 3,
+    numPackages: 10,
+    maxWeight: 10000,
+    maxDistance: 10000,
+    mutationRate: .15,
+    tournamentSize: 5,
+    populationSize: 10,
+    maxGenerations: 20,
+    homeLocation: {
+        x: 100,
+        y: 100,
+        weight: 0,
+    }
+};
+
+var parcelList = randomParcelList();
+var startingPop = randomPop();
+
+var generationalStats = [];
+
+/*
+TESTING
+*/
+setupWorkerSocket();
+
+distributePopForWork(startingPop, 0);
+
+/*
+RUNNER METHODS
+*/
+
+function doGeneration(pop, genNum) {
+    //Reset WorkerManager
+    workerMan.reported = 0;
+    workerMan.nextPop = [];
+
+    //Calculate the stats for the last generation
+    generationalStats.push(getPopulationStats(pop));
+
+    console.log('working on generation ' + genNum);
+
+    if (genNum >= config.maxGenerations) {
+        console.log('finished genetic algorithm');
+        //TODO emit final info to display
+        return;
     }
 
+    //Evolve Population
+    var newPop = evolvePopulation(pop);
 
-var stats = [];
+    //Distribute Work to workers
+    distributePopForWork(newPop, genNum + 1);
+}
 
+/*
+ADMIN METHODS
+*/
+
+admin.on('connect', function(socket) {
+
+});
+
+function sendFinalResults(generationalStats, bestRoute) {
+    admin.emit('server:pass:result', {
+
+    })
+}
+
+
+/*
+WORKER METHODS
+*/
+
+var workerMan = {
+    reported: 0,
+    nextPop: [],
+    generation: 0,
+    readyCount: 0,
+};
+
+//Called once config file is recieved
+function setupWorkerSocket() {
+    worker.on('connect', function(socket) {
+        //Set socket name
+        socket.name = makeID();
+        socket.givenWork = [];
+
+        console.log(socket.name + ' has connected');
+
+        //Send details to worker
+        var workDetail = {
+            config: config,
+            parcelList,
+            parcelList
+        }
+        socket.emit('server:pass:details', workDetail);
+
+        socket.emit('message', startingPop);
+
+
+        socket.passWork = function(id, route) {
+            var work = {
+                id: id,
+                route: route,
+            }
+
+            //Send work to worker
+            socket.emit('server:pass:work', work);
+
+            // console.log('sent work to ' + socket.name, work);
+
+            //Add to socket's given work
+            socket.givenWork.push(work);
+        }
+
+        socket.on('worker:pass:results', function(result) {
+            // console.log(socket.name + ' has returned ', result);
+
+            //Put calculations into currentPop
+            workerMan.nextPop[result.id] = {
+                distance: result.distance,
+                fitness: 1 / result.distance,
+                route: result.route
+            }
+
+            workerMan.reported++;
+
+            //Check if all work is reported
+            if (workerMan.reported === config.populationSize) {
+                // console.log('all work is done');
+                doGeneration(workerMan.nextPop, workerMan.generation);
+            }
+        });
+
+        socket.on('worker:ready', function() {
+            workerMan.readyCount++;
+            console.log(socket.name + ' is ready! ', workerMan.readyCount);
+        })
+
+        socket.on('disconnect', function() {
+            workerMan.readyCount--;
+
+            //Check if worker had work left
+            if (socket.givenWork.length > 0) {
+                //TODO redistribute work
+                console.log(socket.name + ' has disconnected before finishing work');
+            }
+            else {
+                console.log(socket.name + ' has disconnected correctly');
+            }
+        })
+    })
+}
+
+function distributePopForWork(pop, genNum) {
+    var keys = Object.keys(worker.connected);
+    var numConnected = keys.length;
+
+    // console.log('server has ' + numConnected + ' workers');
+
+    //if no workers...
+    if (numConnected == 0) {
+        console.log('--- waiting for a worker to connect...');
+
+        //wait 2 seconds and try again
+        setTimeout(function() {
+            distributePopForWork(pop, genNum);
+        }, 2000);
+
+        return;
+    }
+
+    workerMan.generation = genNum;
+
+    //distribute pop to workers
+    //Loop through population
+    var popIndex = 0;
+    while (popIndex < pop.length) {
+
+        //Loop thought workers
+        for (var socketIndex = 0; socketIndex < numConnected; socketIndex++) {
+            //get socket
+            var socket = worker.connected[keys[socketIndex]];
+
+            // pass work to individual socket
+            socket.passWork(popIndex, pop[popIndex].route);
+
+            //Increment popIndex
+            popIndex++;
+
+            //Check if pop is all sent off
+            if (popIndex >= pop.length) {
+                //it is so break, outerloop will also end
+                break;
+            }
+        }
+    }
+}
+
+/*
+POPULATION METHODS
+*/
 function evolvePopulation(pop) {
     var newPop = [];
+
     // Keep our best individual if elitism is enabled
     var elitismOffset = 0;
     if (config.elitism) {
@@ -183,8 +237,6 @@ function evolvePopulation(pop) {
     }
 
     // Crossover population
-    // Loop over the new population's size and create individuals from
-    // Current population
     for (var i = elitismOffset; i < config.populationSize; i++) {
         // Select parents
         var parent1 = tournamentSelection(pop);
@@ -199,35 +251,25 @@ function evolvePopulation(pop) {
     for (var i = elitismOffset; i < config.populationSize; i++) {
         pop[i] = mutate(pop[i]);
     }
-    
-    stats.push(calcStats(pop));
 
     return newPop;
 }
 
-function calcStats(pop) {
-    var stat = {};
-    
-    
-    
-    return stat;
-}
-
 function mutate(child) {
-    // Loop through tour cities
+    // Loop through route
     for (var index1 = 0; index1 < config.routeSize; index1++) {
         // Apply mutation rate
         if (Math.random() < config.mutationRate) {
-            // Get a second random position in the tour
+            // Get a second random position in the route
             var index2 = Math.floor(child.route.length * Math.random());
 
-            // Get the cities at target position in tour
-            var parcel1 = child.route[index1];
-            var parcel2 = child.route[index2];
+            // Get the parcelIndex at target position in route
+            var parcelIndex1 = child.route[index1];
+            var parcelIndex2 = child.route[index2];
 
             // Swap them around
-            child.route[index2] = parcel1;
-            child.route[index1] = parcel2;
+            child.route[index2] = parcelIndex1;
+            child.route[index1] = parcelIndex2;
         }
     }
 
@@ -236,10 +278,10 @@ function mutate(child) {
 
 function crossover(parcel1, parcel2) {
     if (parcel1.fitness > parcel2.fitness) {
-        return JSON.parse(JSON.stringify(parcel1));
+        return deepCopy(parcel1);
     }
     else {
-        return JSON.parse(JSON.stringify(parcel2));
+        return deepCopy(parcel2);
     }
 }
 
@@ -252,6 +294,7 @@ function tournamentSelection(pop) {
         var randomId = Math.floor(Math.random() * pop.length);
         tourn.push(pop[randomId]);
     }
+
     // Get the fittest of tourn
     return getFittest(tourn);
 }
@@ -265,4 +308,110 @@ function getFittest(pop) {
     }
 
     return pop[best];
+}
+
+function getPopulationStats(pop) {
+    var maxIndex = 0;
+    var minIndex = 0;
+    var sum = pop[0];
+
+    //Loop through and find stat values
+    for (var i = 1; i < pop.length; i++) {
+        if (pop[maxIndex] < pop[i]) {
+            maxIndex = i;
+        }
+
+        if (pop[minIndex] > pop[i]) {
+            minIndex = i;
+        }
+
+        sum += pop[i];
+    }
+
+    //Return stat values
+    return {
+        min: pop[minIndex],
+        max: pop[maxIndex],
+        mean: sum / pop.length
+    }
+}
+
+
+/*
+GENERATE RANDOM DATA
+*/
+
+function randomParcelList() {
+    var arr = []
+    for (var i = 0; i < config.numPackages; i++) {
+        arr.push(randomParcel());
+    }
+
+    return arr;
+}
+
+function randomParcel() {
+    var obj = {};
+    obj.x = Math.floor(Math.random() * randomConfig.maxX);
+    obj.y = Math.floor(Math.random() * randomConfig.maxY);
+    obj.weight = Math.floor(Math.random() * randomConfig.maxWeight) + 1;
+
+    return obj;
+}
+
+function randomPop() {
+    var arr = [];
+
+    for (var i = 0; i < config.populationSize; i++) {
+        arr.push(randomChild());
+    }
+
+    return arr;
+}
+
+function randomChild() {
+    var obj = {};
+    obj.route = [];
+    obj.fitness = 0;
+    obj.distance = Number.MAX_SAFE_INTEGER;
+
+    for (var i = 0; i < config.numPackages; i++) {
+        obj.route.push(i);
+    }
+
+    obj.route = shuffle(obj.route);
+
+    return obj;
+}
+
+/*
+HELPER METHODS
+*/
+
+function shuffle(array) {
+    var currentIndex = array.length,
+        temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+function makeID() {
+    return '_' + Math.random().toString(36).substr(2, 9);
+};
+
+function deepCopy(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }

@@ -44,116 +44,87 @@ function recieveWork(work) {
         return;
     }
 
-    console.log('starting work on ', work.id);
+    console.log('starting work on ', work);
+
     //Start Calculations
-    var realWork = organizeWork(parcelList, work);
+    var startIndex = 0;
+    var endIndex = 0;
+    var totalDistance = 0;
 
-    if (isWeightValid(config, realWork.packageIndex, 0)) {
-        var dist = getTotalDistance(realWork.packageIndex, config);
-        if (dist) {
+    while (startIndex < work.route.length) {
+        //Set endIndex, but no more than route length
+        endIndex = Math.min(startIndex + config.numPackages, work.route.length);
 
-            sendResults(dist, realWork.id);
+        var bucketDist = calcBucket(work.route.slice(startIndex, endIndex));
+
+        if (bucketDist === Number.MAX_SAFE_INTEGER) {
+            console.log(work.id + ' failed to ship!');
+            sendResults(work, Number.MAX_SAFE_INTEGER);
         }
+
+        totalDistance += bucketDist;
+
+        //Set starting index for next pass
+        startIndex = endIndex;
     }
 
-    else
-        sendResults(Number.MAX_SAFE_INTEGER, realWork.id);
+    sendResults(work, totalDistance);
+
 }
 
-function sendResults(totalDist, id) {
+function calcBucket(bArr) {
 
-    console.log('finished work on ' + id + ' ',totalDist);
-    var results = {
-        distance: totalDist,
-        id: id
+    var totalWeight = 0;
+    var totalDistance = 0;
+
+    //Get leaving home distance
+    var currentIndex = -1; // using config.homeLocation
+    var nextIndex = bArr[0];
+
+    //Sum totals for start
+    totalDistance += distBetween(config.homeLocation, parcelList[nextIndex]);
+
+    for (var i = 1; i < bArr.length; i++) {
+        //Get next set
+        currentIndex = nextIndex;
+        nextIndex = bArr[i];
+
+        //Sum totals
+        totalDistance += distBetween(parcelList[currentIndex], parcelList[nextIndex]);
+        totalWeight += parcelList[currentIndex].weight;
     }
-    socket.emit('worker:pass:distance', results);
+
+    //get going home distance
+    currentIndex = nextIndex;
+
+    //Sum totals for end
+    totalDistance += distBetween(parcelList[currentIndex], config.homeLocation);
+    totalWeight += parcelList[currentIndex].weight;
+
+    if (totalDistance > config.maxDistance || totalWeight > config.maxWeight) {
+        return Number.MAX_SAFE_INTEGER;
+    }
+    else {
+        return totalDistance;
+    }
+}
+
+function distBetween(p1, p2) {
+    return Math.sqrt((Math.pow((p1.x - p2.x), 2)) + (Math.pow((p1.y - p2.y), 2)));
+}
+
+function sendResults(work, totalDistance) {
+    console.log('finished work on ' + work.id + ' ', totalDistance);
+    var results = {
+        id: work.id,
+        route: work.route,
+        distance: totalDistance,
+    };
+
+    socket.emit('worker:pass:results', results);
 }
 
 function recieveWorkDetail(details) {
     config = details.config;
     parcelList = details.parcelList;
-}
-
-function getTotalDistance(arr, droneDetails) {
-    var startP = createDistObj(100, 100);
-    var firstLocation = createDistObj(arr[0].x, arr[0].y);
-    var totalDistance = calculation(startP, firstLocation);
-    var returnVariable;
-    var checkdist = true;
-
-    for (var i = 1; i < arr.length; i++) {
-        var p1 = createDistObj(arr[i - 1].x, arr[i - 1].y);
-        var p2 = createDistObj(arr[i].x, arr[i].y);
-        //checkdist += totalDistance;
-        if (i % 3 == 0) {
-            // console.log(totalDistance);
-            totalDistance += calculation(p1, startP);
-            totalDistance += calculation(startP, p2);
-            checkdist += totalDistance;
-            if (checkdist > droneDetails.maxDistance) {
-                console.log("should not print");
-                console.log(checkdist, droneDetails.maxDistance);
-                returnVariable = false;
-                return returnVariable;
-                break;
-            }
-            else checkdist = 0;
-            i++;
-            continue;
-        }
-        totalDistance += calculation(p1, p2);
-    }
-    var lastLocation = createDistObj(arr[i - 2].x, arr[i - 2].y);;
-    totalDistance += calculation(lastLocation, startP);
-    if (returnVariable) {
-        returnVariable = totalDistance;
-    }
-    return returnVariable;
-}
-
-function calculation(p1, p2) {
-    return Math.sqrt((Math.pow((p1.x - p2.x), 2)) + (Math.pow((p1.y - p2.y), 2)));
-}
-
-function isWeightValid(dConfig, array, index) {
-    var i = index;
-    var bucketWeight = 0;
-    var stopIndex = dConfig.numPackages + i;
-    if (stopIndex > array.length) {
-        stopIndex = array.length;
-    }
-    for (i; i < stopIndex; i++) {
-        if (array[i].weight) {
-            bucketWeight += array[i].weight;
-        }
-        else return;
-    }
-    if (bucketWeight > dConfig.maxWeight)
-        return false;
-    else if (i < array.length) {
-        return isWeightValid(dConfig, array, i);
-    }
-    return true;
-}
-
-function createDistObj(x, y) {
-    var p = {};
-    p.x = x;
-    p.y = y;
-    return p;
-}
-
-function organizeWork(mainArray, work) {
-    console.log('configuring work for ' + work.id);
-    var newArray = [];
-    var workArray = work.route;
-    for (var i = 0; i < workArray.length; i++) {
-        newArray[i] = mainArray[workArray[i]];
-    }
-    work = {
-        id: work.id,
-        packageIndex: newArray
-    }
-    return work;
 }
